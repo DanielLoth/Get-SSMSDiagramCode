@@ -10,7 +10,11 @@ param (
     [string] $DiagramSchema = "DiagramGeneration",
 
     [Parameter(Mandatory = $false)]
-    [int] $ChunkSize = 20
+    [int] $ChunkSize = 20,
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("Mandatory", "Optional", "Strict")]
+    [string] $Encrypt = "Optional"
 )
 
 ############
@@ -48,7 +52,8 @@ $DiagramTableExists = Invoke-SqlCmd `
     -ConnectionTimeout 5 `
     -OutputAs DataTables `
     -QueryTimeout 5 `
-    -Query $DiagramTableExistsQuery
+    -Query $DiagramTableExistsQuery `
+    -Encrypt $Encrypt
 
 if ($DiagramTableExists[0].DiagramTableExists -eq 0) {
     Write-Host "The dbo.sysdiagrams table does not exist"
@@ -114,7 +119,8 @@ $Results = Invoke-SqlCmd `
     -OutputAs DataTables `
     -QueryTimeout 30 `
     -Query $Query `
-    -Variable $Variables
+    -Variable $Variables `
+    -Encrypt $Encrypt
 
 if ($null -eq $Results) {
     Write-Host "No diagrams exist"
