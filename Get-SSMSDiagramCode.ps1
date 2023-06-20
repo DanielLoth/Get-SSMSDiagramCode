@@ -150,7 +150,7 @@ set xact_abort, nocount on;
 
 if @@trancount > 0
 begin
-    throw 50000, N'This procedure must not be executed within an open transaction.', 1;
+    ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
     return 1;
 end
 
@@ -225,7 +225,7 @@ set xact_abort, nocount on;
 
 if @@trancount > 0
 begin
-    throw 50000, N'This procedure must not be executed within an open transaction.', 1;
+    ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
     return 1;
 end
 
