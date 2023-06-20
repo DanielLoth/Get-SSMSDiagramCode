@@ -149,54 +149,55 @@ foreach ($Group in $ResultsGrouped) {
     $GenerationProcedureNames += $ProcedureName
 
     $OutputSql += "
-create procedure $ProcedureName
+create or alter procedure $ProcedureName
 as
-set xact_abort, nocount on;
-
-if @@trancount > 0
 begin
-    ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
-    return 1;
-end
+    set xact_abort, nocount on;
 
-begin try
-
-    set transaction isolation level serializable;
-
-    begin transaction;
-
-    declare @DiagramWithNameExists bit = 0;
-    declare @DiagramId int = 0;
-
-    select
-        @DiagramWithNameExists = 1,
-        @DiagramId = diagram_id
-    from dbo.sysdiagrams with (updlock, rowlock)
-    where principal_id = $($LastRow.principal_id) and name = '$($LastRow.name)';
-
-    if @DiagramWithNameExists = 0
+    if @@trancount > 0
     begin
-        print N'Creating diagram ''$($LastRow.name)''...';
-
-        declare @NewDiagramId table (Id int primary key);
-
-        insert into dbo.sysdiagrams (name, principal_id, version, definition)
-        output inserted.diagram_id
-        into @NewDiagramId
-        values ('$($LastRow.name)', $($LastRow.principal_id), 1, 0x);
-
-        select @DiagramId = (select Id from @NewDiagramId);
+        ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
+        return 1;
     end
-    else
-    begin
-        print N'Replacing diagram ''$($LastRow.name)''...';
-        update dbo.sysdiagrams set definition = 0x where diagram_id = @DiagramId;
-    end
+
+    begin try
+
+        set transaction isolation level serializable;
+
+        begin transaction;
+
+        declare @DiagramWithNameExists bit = 0;
+        declare @DiagramId int = 0;
+
+        select
+            @DiagramWithNameExists = 1,
+            @DiagramId = diagram_id
+        from dbo.sysdiagrams with (updlock, rowlock)
+        where principal_id = $($LastRow.principal_id) and name = '$($LastRow.name)';
+
+        if @DiagramWithNameExists = 0
+        begin
+            print N'Creating diagram ''$($LastRow.name)''...';
+
+            declare @NewDiagramId table (Id int primary key);
+
+            insert into dbo.sysdiagrams (name, principal_id, version, definition)
+            output inserted.diagram_id
+            into @NewDiagramId
+            values ('$($LastRow.name)', $($LastRow.principal_id), 1, 0x);
+
+            select @DiagramId = (select Id from @NewDiagramId);
+        end
+        else
+        begin
+            print N'Replacing diagram ''$($LastRow.name)''...';
+            update dbo.sysdiagrams set definition = 0x where diagram_id = @DiagramId;
+        end
 "
 
     foreach ($Row in $Group.Group) {
         $OutputSql += "
-    update dbo.sysdiagrams set definition.Write ($($Row.Chunk), null, 0) where diagram_id = @DiagramId;"
+        update dbo.sysdiagrams set definition.Write ($($Row.Chunk), null, 0) where diagram_id = @DiagramId;"
 
         if ($Row -eq $LastRow) {
             $OutputSql += $NewLine
@@ -204,15 +205,16 @@ begin try
     }
 
     $OutputSql += "
-    commit;
+        commit;
 
-end try
-begin catch
-    if @@trancount > 0 rollback;
-    throw;
-end catch
+    end try
+    begin catch
+        if @@trancount > 0 rollback;
+        throw;
+    end catch
 
-return 0;
+    return 0;
+end;
 
 go
 "
@@ -224,23 +226,24 @@ go
 #########################################
 
 $OutputSql += "
-create procedure [$($DiagramSchema)].[InsertAllDiagrams]
+create or alter procedure [$($DiagramSchema)].[InsertAllDiagrams]
 as
-set xact_abort, nocount on;
-
-if @@trancount > 0
 begin
-    ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
-    return 1;
-end
+    set xact_abort, nocount on;
 
-begin try
+    if @@trancount > 0
+    begin
+        ; throw 50000, N'This procedure must not be executed within an open transaction.', 1;
+        return 1;
+    end;
+
+    begin try
 "
 
 $LastProcedureName = $GenerationProcedureNames[-1]
 
 foreach ($ProcedureName in $GenerationProcedureNames) {
-    $OutputSql += "    exec $($ProcedureName);"
+    $OutputSql += "        exec $($ProcedureName);"
 
     if ($ProcedureName -ne $LastProcedureName) {
         $OutputSql += $NewLine
@@ -248,13 +251,14 @@ foreach ($ProcedureName in $GenerationProcedureNames) {
 }
 
 $OutputSql += "
-end try
-begin catch
-    if @@trancount > 0 rollback;
-    throw;
-end catch
+    end try
+    begin catch
+        if @@trancount > 0 rollback;
+        throw;
+    end catch
 
-return 0;
+    return 0;
+end;
 
 go
 "
