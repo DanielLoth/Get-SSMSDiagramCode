@@ -38,6 +38,11 @@ You can also specify the chunk size (number of bytes per generated `update` stat
 .\Get-SSMSDiagramCode.ps1 -Database StackOverflow2013 -ChunkSize 32
 ```
 
+You can also specify the encryption type to use when connecting to SQL Server using the `-Encrypt` argument:
+```powershell
+.\Get-SSMSDiagramCode.ps1 -Database StackOverflow2013 -Encrypt Optional
+```
+
 By default the generated code will be written to the PowerShell terminal. You can redirect the generated code elsewhere - such as a file - using the `Out-File` cmdlet. For example:
 ```powershell
 .\Get-SSMSDiagramCode.ps1 -Database StackOverflow2013 | Out-File -FilePath generated.sql -Encoding utf8
