@@ -135,7 +135,12 @@ $ResultsGrouped = $Results | Group-Object -Property diagram_id
 ############################################
 
 $GenerationProcedureNames = @()
-$OutputSql = ""
+$OutputSql = "
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'$($DiagramSchema)')
+    EXEC('CREATE SCHEMA [$($DiagramSchema)] AUTHORIZATION [dbo]');
+GO
+
+"
 
 foreach ($Group in $ResultsGrouped) {
     $LastRow = $Group.Group[-1]
