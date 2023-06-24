@@ -22,7 +22,7 @@ param (
 ############
 
 #requires -Version 5.1
-#requires -Modules SqlServer
+#requires -Modules @{ ModuleName="SqlServer"; ModuleVersion="22.1.1" }
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
